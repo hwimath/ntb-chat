@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+// 자동 생성된 문제 은행 파일을 가져옵니다.
 import { toeicProblems, grammarSkills } from '../lib/toeicData.js';
 
 // --- 아이콘 컴포넌트 ---
@@ -69,7 +70,7 @@ export default function Home() {
         clearInterval(timerRef.current);
         setTimeLeft(duration);
         timerRef.current = setInterval(() => {
-            setTimeLeft(prev => prev - 1);
+            setTimeLeft(prev => prev > 0 ? prev - 1 : 0);
         }, 1000);
     };
 
@@ -81,7 +82,6 @@ export default function Home() {
         const shuffledGrammar = [...grammarProblems].sort(() => 0.5 - Math.random()).slice(0, 5);
         const shuffledVocab = [...vocabProblems].sort(() => 0.5 - Math.random()).slice(0, 5);
         
-        // 문법과 어휘 문제를 섞습니다.
         let stageQuestions = [];
         for (let i = 0; i < 5; i++) {
             stageQuestions.push(shuffledGrammar[i]);
@@ -197,7 +197,6 @@ export default function Home() {
         }, 3000);
     };
 
-    // --- 폼 제출 핸들러 ---
     const handleSubmit = async (e) => {
         e.preventDefault();
         const currentUserInput = userInput.trim();
