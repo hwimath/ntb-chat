@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-// 자동 생성된 문제 은행 파일을 가져옵니다.
 import { toeicProblems, grammarSkills } from '../lib/toeicData.js';
 
 // --- 아이콘 컴포넌트 ---
@@ -20,14 +19,11 @@ const BotIcon = () => (
 );
 
 export default function Home() {
-    // --- 상태 관리 변수들 ---
-    const [gameState, setGameState] = useState('IDLE'); // IDLE, ASKING_ID, IN_QUIZ, SHOWING_RESULTS, STAGE_2_PROMPT
+    const [gameState, setGameState] = useState('IDLE');
     const [userId, setUserId] = useState('');
     const [chatHistory, setChatHistory] = useState([]);
     const [userInput, setUserInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    
-    // 퀴즈 관련 상태
     const [stage, setStage] = useState(1);
     const [questions, setQuestions] = useState([]);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -38,7 +34,6 @@ export default function Home() {
     const chatContainerRef = useRef(null);
     const timerRef = useRef(null);
 
-    // --- useEffect Hooks ---
     useEffect(() => {
         addBotMessage("안녕하세요! NTB 토익 챌린지에 오신 것을 환영합니다. 먼저 회원님의 아이디를 입력해주세요.");
         setGameState('ASKING_ID');
@@ -52,11 +47,10 @@ export default function Home() {
     
     useEffect(() => {
         if (timeLeft === 0 && gameState === 'IN_QUIZ') {
-            handleAnswer(null); // 시간이 다 되면 null로 답변 처리
+            handleAnswer(null);
         }
     }, [timeLeft]);
 
-    // --- 챗봇 메시지 추가 헬퍼 함수 ---
     const addBotMessage = (text, isHtml = false) => {
         setChatHistory(prev => [...prev, { role: 'bot', content: text, isHtml }]);
     };
@@ -65,7 +59,6 @@ export default function Home() {
         setChatHistory(prev => [...prev, { role: 'user', content: text }]);
     };
 
-    // --- 타이머 함수 ---
     const startTimer = (duration) => {
         clearInterval(timerRef.current);
         setTimeLeft(duration);
@@ -74,14 +67,11 @@ export default function Home() {
         }, 1000);
     };
 
-    // --- 퀴즈 로직 함수들 ---
     const startStage = (currentStage) => {
         const grammarProblems = toeicProblems.filter(p => p.type === 'grammar');
         const vocabProblems = toeicProblems.filter(p => p.type === 'vocab');
-        
         const shuffledGrammar = [...grammarProblems].sort(() => 0.5 - Math.random()).slice(0, 5);
         const shuffledVocab = [...vocabProblems].sort(() => 0.5 - Math.random()).slice(0, 5);
-        
         let stageQuestions = [];
         for (let i = 0; i < 5; i++) {
             stageQuestions.push(shuffledGrammar[i]);
@@ -106,8 +96,7 @@ export default function Home() {
                 <div class="mt-3 space-y-2">
                     ${q.options.map(opt => `<p class="text-sm">${opt}</p>`).join('')}
                 </div>
-            </div>
-        `;
+            </div>`;
         addBotMessage(questionHtml, true);
         startTimer(timeLimit);
     };
@@ -138,16 +127,17 @@ export default function Home() {
                     const response = await fetch('/api/chat', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ word: q.options.find(opt => opt.startsWith(`(${q.answer})`))?.split(' ')[1] })
+                        body: JSON.stringify({ 
+                            type: 'GET_EXPLANATION',
+                            payload: { word: q.options.find(opt => opt.startsWith(`(${q.answer})`))?.split(' ')[1] }
+                        })
                     });
                     const data = await response.json();
                     if(data.explanation) {
                         const vocabExplanation = `<div class="mt-2 p-3 bg-gray-800 rounded-md text-xs"><p class="font-semibold">[어휘 해설]</p><p>${data.explanation.replace(/\n/g, '<br/>')}</p></div>`;
                         addBotMessage(vocabExplanation, true);
                     }
-                } catch (error) {
-                    console.error("어휘 해설 로딩 실패:", error);
-                }
+                } catch (error) { console.error("어휘 해설 로딩 실패:", error); }
             }
         }
         
@@ -170,24 +160,41 @@ export default function Home() {
         }
     };
 
-    const showFinalResults = () => {
+    const showFinalResults = async () => {
         setGameState('SHOWING_RESULTS');
         let resultMessage = `**모든 스테이지가 종료되었습니다!**\n\n${userId}님의 최종 점수는 **${totalScore}/20** 입니다.`;
         let challenge;
+        let challengeKey;
 
         if (totalScore <= 10) {
             challenge = "'레벨 C 토익입문1000 챌린지'";
+            challengeKey = 'C';
         } else if (totalScore >= 16) {
             challenge = "'레벨 A 최상위3000 챌린지'";
+            challengeKey = 'A';
         } else {
             challenge = "'토익영단어1400 챌린지'";
+            challengeKey = 'B';
         }
         
         resultMessage += `\n\n${userId}님의 실력에 맞는 **${challenge}**를 추천해 드립니다!`;
         resultMessage += `\n- **순한맛:** 하루 50개 암기 (2개월 과정)\n- **매운맛:** 하루 100개 암기 (1개월 과정)`;
-        
         addBotMessage(resultMessage, true);
         
+        try {
+            const resultToSave = `[NTB_RESULT]${userId}||${totalScore}/20||${challengeKey}`;
+            await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'SAVE_RESULT',
+                    payload: { resultText: resultToSave }
+                })
+            });
+        } catch (error) {
+            console.error("결과 저장 실패:", error);
+        }
+
         setTimeout(() => {
             addBotMessage("챌린지 참여에 대한 자세한 내용은 아래 링크를 참조해주세요.\n<a href='https://www.ntb307.co.kr' target='_blank' class='text-blue-400 hover:underline'>https://www.ntb307.co.kr</a>", true);
         }, 1500);
@@ -247,6 +254,7 @@ export default function Home() {
                             {message.role === 'user' && <UserIcon />}
                         </div>
                     ))}
+                    {/* --- 수정된 부분: 로딩 인디케이터 --- */}
                     {isLoading && (
                         <div className="flex items-start gap-4">
                             <BotIcon />
@@ -265,6 +273,7 @@ export default function Home() {
                         <input
                             type="text"
                             value={userInput}
+                            // --- 수정된 부분: 오타 수정 ---
                             onChange={(e) => setUserInput(e.target.value)}
                             placeholder={gameState === 'IN_QUIZ' ? "정답(A, B, C, D)을 입력하세요..." : "여기에 입력하세요..."}
                             className="flex-1 p-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-white placeholder-gray-400"
