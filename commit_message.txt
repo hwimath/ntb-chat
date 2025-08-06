@@ -1,1 +1,1 @@
-Fix: Prevent chat from freezing at the end of the game
+Fix: Re-apply watermark text update
