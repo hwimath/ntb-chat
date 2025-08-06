@@ -252,7 +252,7 @@ export default function Home() {
     return (
         <div className="flex flex-col h-screen bg-gray-800 text-white relative">
             <div className="absolute inset-0 flex items-center justify-center z-0">
-                <span className="text-9xl font-extrabold text-white opacity-5 select-none">NTB</span>
+                <span className="text-9xl font-extrabold text-white opacity-5 select-none">NTB 토익</span>
             </div>
             <div className="flex flex-col h-full z-10 backdrop-blur-sm bg-black/10">
                 <header className="p-4 border-b border-gray-700 flex justify-between items-center">
