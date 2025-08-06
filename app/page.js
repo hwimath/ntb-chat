@@ -67,17 +67,38 @@ export default function Home() {
         }, 1000);
     };
 
-    const startStage = (currentStage) => {
-        const grammarProblems = toeicProblems.filter(p => p.type === 'grammar');
-        const vocabProblems = toeicProblems.filter(p => p.type === 'vocab');
-        const shuffledGrammar = [...grammarProblems].sort(() => 0.5 - Math.random()).slice(0, 5);
-        const shuffledVocab = [...vocabProblems].sort(() => 0.5 - Math.random()).slice(0, 5);
-        let stageQuestions = [];
-        for (let i = 0; i < 5; i++) {
-            stageQuestions.push(shuffledGrammar[i]);
-            stageQuestions.push(shuffledVocab[i]);
+    const [shuffledProblems, setShuffledProblems] = useState([]);
+    const [usedProblemIds, setUsedProblemIds] = useState(new Set());
+
+    // Fisher-Yates shuffle function
+    const shuffle = (array) => {
+        let currentIndex = array.length, randomIndex;
+        while (currentIndex !== 0) {
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex--;
+            [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
         }
-        stageQuestions = stageQuestions.sort(() => 0.5 - Math.random());
+        return array;
+    };
+
+    useEffect(() => {
+        setShuffledProblems(shuffle([...toeicProblems]));
+    }, []);
+
+    const startStage = (currentStage) => {
+        const newUsedIds = new Set(usedProblemIds);
+        
+        const availableGrammar = shuffledProblems.filter(p => p.type === 'grammar' && !newUsedIds.has(p.id));
+        const availableVocab = shuffledProblems.filter(p => p.type === 'vocab' && !newUsedIds.has(p.id));
+
+        const stageGrammar = availableGrammar.slice(0, 5);
+        const stageVocab = availableVocab.slice(0, 5);
+
+        stageGrammar.forEach(q => newUsedIds.add(q.id));
+        stageVocab.forEach(q => newUsedIds.add(q.id));
+        setUsedProblemIds(newUsedIds);
+
+        let stageQuestions = shuffle([...stageGrammar, ...stageVocab]);
         
         setQuestions(stageQuestions);
         setCurrentQuestionIndex(0);

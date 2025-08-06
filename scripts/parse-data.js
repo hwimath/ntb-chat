@@ -17,6 +17,7 @@ const answers = {
 function parseProblemFiles() {
     const problems = [];
     const problemFiles = fs.readdirSync(dataDir).filter(file => file.startsWith('토익앱용'));
+    const choices = ['A', 'B', 'C', 'D'];
 
     for (const file of problemFiles) {
         const content = fs.readFileSync(path.join(dataDir, file), 'utf-8');
@@ -47,7 +48,7 @@ function parseProblemFiles() {
                 type: type,
                 question: questionText,
                 options: options.map(opt => opt.trim()),
-                answer: answers[problemId] || 'A', // 정답이 없으면 A로 기본값
+                answer: answers[problemId] || choices[Math.floor(Math.random() * choices.length)], // 정답이 없으면 A,B,C,D 중 랜덤 선택
             });
         }
     }
