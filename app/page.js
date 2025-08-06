@@ -183,7 +183,9 @@ export default function Home() {
 
     const showFinalResults = async () => {
         setGameState('SHOWING_RESULTS');
-        let resultMessage = `**모든 스테이지가 종료되었습니다!**\n\n${userId}님의 최종 점수는 **${totalScore}/20** 입니다.`;
+        let resultMessage = `**모든 스테이지가 종료되었습니다!**
+
+${userId}님의 최종 점수는 **${totalScore}/20** 입니다.`;
         let challenge;
         let challengeKey;
 
@@ -221,8 +223,19 @@ export default function Home() {
         }, 1500);
 
         setTimeout(() => {
-            addBotMessage("더 쉬운 문법문제를 원하시면 숫자 1, 더 어려운 문법문제를 원하시면 숫자 2, 어휘문제를 원하시면 숫자 3을 입력해 주세요.");
+            addBotMessage("새로운 챌린지를 시작하려면 아무 키나 입력하세요.");
+            setGameState('AWAITING_RESTART');
         }, 3000);
+    };
+
+    const resetGame = () => {
+        addBotMessage("새로운 토익 챌린지를 시작하겠습니다.");
+        setStage(1);
+        setTotalScore(0);
+        setWrongAnswers([]);
+        setUsedProblemIds(new Set());
+        setShuffledProblems(shuffle([...toeicProblems]));
+        setTimeout(() => startStage(1), 1000);
     };
 
     const handleSubmit = async (e) => {
@@ -246,6 +259,8 @@ export default function Home() {
             } else {
                 showFinalResults();
             }
+        } else if (gameState === 'AWAITING_RESTART') {
+            resetGame();
         }
     };
 
