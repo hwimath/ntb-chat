@@ -1,1 +1,1 @@
-Fix: Re-apply watermark text update
+Fix: Remove conflicting lockfiles and re-deploy all changes
